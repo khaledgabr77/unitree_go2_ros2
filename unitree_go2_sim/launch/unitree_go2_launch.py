@@ -75,11 +75,27 @@ def generate_launch_description():
         default_value="effort",
         description="ros2_control joint command interface: effort or position",
     )
+    declare_disable_camera = DeclareLaunchArgument(
+        "disable_camera", default_value="false", description="Leave out the mono camera"
+    )
+    declare_disable_d455 = DeclareLaunchArgument(
+        "disable_d455", default_value="false", description="Leave out the RealSense D455"
+    )
+    declare_disable_lidar_l1 = DeclareLaunchArgument(
+        "disable_lidar_l1", default_value="false", description="Leave out the 4D Lidar L1"
+    )
+    declare_disable_velodyne_lidar = DeclareLaunchArgument(
+        "disable_velodyne_lidar", default_value="false", description="Leave out the Velodyne lidar"
+    )
     
     # Description nodes and parameters
     robot_description = {"robot_description": Command(["xacro ", LaunchConfiguration("unitree_go2_description_path"),
                                                        " robot_controllers:=", LaunchConfiguration("ros_control_file"),
-                                                       " command_interface:=", LaunchConfiguration("command_interface")])}
+                                                       " command_interface:=", LaunchConfiguration("command_interface"),
+                                                       " disable_camera:=", LaunchConfiguration("disable_camera"),
+                                                       " disable_d455:=", LaunchConfiguration("disable_d455"),
+                                                       " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
+                                                       " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar")])}
     
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
@@ -303,6 +319,10 @@ def generate_launch_description():
             declare_world_init_heading,
             declare_description_path, 
             declare_command_interface,
+            declare_disable_camera,
+            declare_disable_d455,
+            declare_disable_lidar_l1,
+            declare_disable_velodyne_lidar,
 
             # Parameters
             SetParameter(name="use_sim_time", value=use_sim_time),

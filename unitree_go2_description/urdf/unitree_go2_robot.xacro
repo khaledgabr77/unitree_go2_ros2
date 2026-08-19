@@ -7,6 +7,11 @@
     <xacro:arg name="robot_controllers" default="$(find unitree_go2_sim)/config/ros_control/ros_control.yaml"/>
     <!-- Joint command interface used by ros2_control: "effort" or "position" -->
     <xacro:arg name="command_interface" default="effort"/>
+    <!-- Optional sensors, all mounted by default -->
+    <xacro:arg name="disable_camera" default="false"/>
+    <xacro:arg name="disable_d455" default="false"/>
+    <xacro:arg name="disable_lidar_l1" default="false"/>
+    <xacro:arg name="disable_velodyne_lidar" default="false"/>
 
     <xacro:include filename="$(find unitree_go2_description)/urdf/const.xacro" />
     <xacro:include filename="$(find unitree_go2_description)/urdf/materials.xacro" />
@@ -129,33 +134,35 @@
     </link>
 
     <!-- Camera Link-->
-    <link name="camera_link">
-        <inertial>
-            <mass value="0.001" />
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
-        </inertial>
-        <visual>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <sphere radius="0.001" />
-            </geometry>
-            <material name="">
-                <color rgba="0.5 0 0 1" />
-            </material>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0" xyz="0 0 0" />
-            <geometry>
-                <sphere radius="0.001" />
-            </geometry>
-        </collision>
-    </link>
-    <joint name="camera_joint" type="fixed">
-        <parent link="trunk" />
-        <child link="camera_link" />
-        <origin rpy="0 0 0" xyz="0.326 0 0.043" />
-    </joint>
+    <xacro:unless value="$(arg disable_camera)">
+        <link name="camera_link">
+            <inertial>
+                <mass value="0.001" />
+                <origin rpy="0 0 0" xyz="0 0 0" />
+                <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+            </inertial>
+            <visual>
+                <origin rpy="0 0 0" xyz="0 0 0" />
+                <geometry>
+                    <sphere radius="0.001" />
+                </geometry>
+                <material name="">
+                    <color rgba="0.5 0 0 1" />
+                </material>
+            </visual>
+            <collision>
+                <origin rpy="0 0 0" xyz="0 0 0" />
+                <geometry>
+                    <sphere radius="0.001" />
+                </geometry>
+            </collision>
+        </link>
+        <joint name="camera_joint" type="fixed">
+            <parent link="trunk" />
+            <child link="camera_link" />
+            <origin rpy="0 0 0" xyz="0.326 0 0.043" />
+        </joint>
+    </xacro:unless>
 
 
     <!-- <joint name="lidar_l1_joint" type="fixed">
@@ -198,5 +205,18 @@
         command_interface="$(arg command_interface)" />
     <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False"
         command_interface="$(arg command_interface)" />
+
+    <!-- Optional sensors -->
+    <xacro:unless value="$(arg disable_d455)">
+        <xacro:d455_camera />
+    </xacro:unless>
+
+    <xacro:unless value="$(arg disable_lidar_l1)">
+        <xacro:lidar_l1 />
+    </xacro:unless>
+
+    <xacro:unless value="$(arg disable_velodyne_lidar)">
+        <xacro:velodyne_lidar />
+    </xacro:unless>
 
 </robot>
