@@ -5,6 +5,8 @@
 
     <xacro:arg name="DEBUG" default="false"/>
     <xacro:arg name="robot_controllers" default="$(find unitree_go2_sim)/config/ros_control/ros_control.yaml"/>
+    <!-- Joint command interface used by ros2_control: "effort" or "position" -->
+    <xacro:arg name="command_interface" default="effort"/>
 
     <xacro:include filename="$(find unitree_go2_description)/urdf/const.xacro" />
     <xacro:include filename="$(find unitree_go2_description)/urdf/materials.xacro" />
@@ -188,9 +190,13 @@
         </collision>
     </link> -->
 
-    <xacro:leg name="rf" mirror="-1" mirror_dae="False" front_hind="1" front_hind_dae="True" />
-    <xacro:leg name="lf" mirror="1" mirror_dae="True" front_hind="1" front_hind_dae="True" />
-    <xacro:leg name="rh" mirror="-1" mirror_dae="False" front_hind="-1" front_hind_dae="False" />
-    <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="rf" mirror="-1" mirror_dae="False" front_hind="1" front_hind_dae="True"
+        command_interface="$(arg command_interface)" />
+    <xacro:leg name="lf" mirror="1" mirror_dae="True" front_hind="1" front_hind_dae="True"
+        command_interface="$(arg command_interface)" />
+    <xacro:leg name="rh" mirror="-1" mirror_dae="False" front_hind="-1" front_hind_dae="False"
+        command_interface="$(arg command_interface)" />
+    <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False"
+        command_interface="$(arg command_interface)" />
 
 </robot>

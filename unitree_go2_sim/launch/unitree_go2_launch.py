@@ -70,10 +70,16 @@ def generate_launch_description():
         default_value=default_model_path,
         description="Path to the robot description xacro file",
     )
+    declare_command_interface = DeclareLaunchArgument(
+        "command_interface",
+        default_value="effort",
+        description="ros2_control joint command interface: effort or position",
+    )
     
     # Description nodes and parameters
     robot_description = {"robot_description": Command(["xacro ", LaunchConfiguration("unitree_go2_description_path"),
-                                                       " robot_controllers:=", LaunchConfiguration("ros_control_file")])}
+                                                       " robot_controllers:=", LaunchConfiguration("ros_control_file"),
+                                                       " command_interface:=", LaunchConfiguration("command_interface")])}
     
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
@@ -296,6 +302,7 @@ def generate_launch_description():
             declare_world_init_z,
             declare_world_init_heading,
             declare_description_path, 
+            declare_command_interface,
 
             # Parameters
             SetParameter(name="use_sim_time", value=use_sim_time),

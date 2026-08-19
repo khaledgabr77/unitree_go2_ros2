@@ -4,7 +4,8 @@
 
     <!-- <xacro:include filename="$(find unitree_go2_description)/transmission.xacro"/> -->
 
-    <xacro:macro name="leg" params="name mirror mirror_dae front_hind front_hind_dae">
+    <xacro:macro name="leg"
+        params="name mirror mirror_dae front_hind front_hind_dae command_interface:=effort">
 
         <joint name="${name}_hip_joint" type="revolute">
             <xacro:if value="${(mirror_dae == False) and (front_hind_dae == True)}">
@@ -176,19 +177,19 @@
                 <plugin>gz_ros2_control/GazeboSimSystem</plugin>
             </hardware>
             <joint name="${name}_hip_joint">
-                <command_interface name="effort"/>
+                <command_interface name="${command_interface}"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
             </joint>
         
             <joint name="${name}_upper_leg_joint">
-                <command_interface name="effort"/>
+                <command_interface name="${command_interface}"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
             </joint>
         
             <joint name="${name}_lower_leg_joint">
-                <command_interface name="effort"/>
+                <command_interface name="${command_interface}"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
             </joint>

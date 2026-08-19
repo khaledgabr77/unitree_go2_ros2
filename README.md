@@ -95,6 +95,21 @@ ros2 launch unitree_go2_sim unitree_go2_launch.py
 
 ![Unitree Go2 Simulation](docs/unitree_go2_sim.png)
 
+#### Joint command interface
+
+The joints are driven through `ros2_control`. By default the effort
+interface is used, matching `joint_group_effort_controller` in
+`unitree_go2_sim/config/ros_control/ros_control.yaml`. If needed,
+can be changed to position interface with:
+
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py command_interface:=position
+```
+
+Remember to switch the spawned controller in `ros_control.yaml` to a
+position controller as well, otherwise the controller manager will fail to
+claim the joints.
+
 [Watch Demo on YouTube](https://youtu.be/NUu7TaZhaQM)
 
 ### RVIZ Visualization
