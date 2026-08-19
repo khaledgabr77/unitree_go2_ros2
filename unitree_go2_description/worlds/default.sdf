@@ -11,7 +11,7 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
 
-    <physics name="1ms" type="bullet-featherstone">
+    <physics name="1ms" type="dart">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
@@ -38,7 +38,8 @@
       filename="gz-sim-navsat-system"
       name="gz::sim::systems::NavSat">
     </plugin>
-    
+
+
     <!-- Lights -->
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>

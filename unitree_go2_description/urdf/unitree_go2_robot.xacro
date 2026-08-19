@@ -13,8 +13,8 @@
     <xacro:include filename="$(find unitree_go2_description)/urdf/unitree_go2_gazebo.xacro" />
     <!-- <xacro:include filename="$(find unitree_go2_description)/launch/stairs.urdf.xacro"/> -->
     <xacro:include filename="$(find unitree_go2_description)/urdf/velodyne.xacro"/>
-    <xacro:include filename="$(find unitree_go2_description)/urdf/lidar_4D_lidar.xacro"/>
-    <xacro:include filename="$(find unitree_go2_description)/urdf/realsense_d455.xacro"/>
+    <!-- <xacro:include filename="$(find unitree_go2_description)/urdf/lidar_4D_lidar.xacro"/> -->
+    <!-- <xacro:include filename="$(find unitree_go2_description)/urdf/realsense_d455.xacro"/> -->
     <!-- <xacro:stairs stairs="15" xpos="0" ypos="0" zpos="0" /> -->
 
     <xacro:unitree_go2_gazebo robot_controllers="$(arg robot_controllers)"/>
