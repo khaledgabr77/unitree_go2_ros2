@@ -171,28 +171,46 @@
             </inertial>
         </link>
 
+        <!-- gz_ros2_control reads <param name="initial_value"> on the position
+             state interface and spawns each joint at that angle. Without it,
+             every joint starts at 0 (legs straight down, 0.426 m vertical
+             poles) and buckles laterally before the effort controller can
+             activate; the trunk then lands on its back.
+
+             Pose: hip=0, upper_leg=0.8 rad (~46 deg), lower_leg=-1.5 rad
+             (~-86 deg). With thigh=calf=0.213 m this puts each foot
+             essentially directly below its hip at ~0.31 m below the trunk.
+             Pair with world_init_z ~= 0.35 m so the feet land within
+             1-2 cm of the floor; the gait controller then smoothly
+             transitions to the nominal_height stance. -->
         <ros2_control name="${name}" type="system">
             <hardware>
                 <plugin>gz_ros2_control/GazeboSimSystem</plugin>
             </hardware>
             <joint name="${name}_hip_joint">
                 <command_interface name="effort"/>
-                <state_interface name="position"/>
+                <state_interface name="position">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-        
+
             <joint name="${name}_upper_leg_joint">
                 <command_interface name="effort"/>
-                <state_interface name="position"/>
+                <state_interface name="position">
+                    <param name="initial_value">0.8</param>
+                </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-        
+
             <joint name="${name}_lower_leg_joint">
                 <command_interface name="effort"/>
-                <state_interface name="position"/>
+                <state_interface name="position">
+                    <param name="initial_value">-1.5</param>
+                </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-        </ros2_control> 
+        </ros2_control>
 
         <!-- <xacro:leg_transmission name="${name}"/> -->
 

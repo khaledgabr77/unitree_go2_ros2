@@ -39,7 +39,9 @@
                 <odom_frame>odom</odom_frame>
                 <robot_base_frame>base_link</robot_base_frame>
                 <odom_topic>/odom</odom_topic>
+                <tf_topic>/odom_tf</tf_topic>
                 <odom_publish_frequency>50</odom_publish_frequency>
+                <tf_publish_frequency>50</tf_publish_frequency>
             </plugin>
         </gazebo>
 
