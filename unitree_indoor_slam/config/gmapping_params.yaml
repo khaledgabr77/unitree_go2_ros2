@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Khaled Gabr
+slam_gmapping:
+  ros__parameters:
+
+    # Frames
+    base_frame: base_link
+    map_frame: map
+    odom_frame: odom
+
+    # Runtime
+    use_sim_time: true
+    throttle_scans: 1
+    transform_publish_period: 0.05    # seconds between map->odom TF publishes
+    tf_delay: 0.05
+    map_update_interval: 1.0          # seconds between full map regenerations
+
+    # Scan matcher (likelihood field)
+    maxUrange: 16.0      # max usable scan range (m)
+    maxRange:  20.0      # max sensor range (m); 0 => auto from scan
+    minimumScore: 50.0   # below this, scan match is rejected
+    sigma: 0.05
+    kernelSize: 1
+    lstep: 0.05
+    astep: 0.05
+    iterations: 5
+    lsigma: 0.075
+    ogain: 3.0
+    lskip: 0
+
+    # Motion model noise (sigma rotation/translation given rotation/translation)
+    srr: 0.1
+    srt: 0.2
+    str: 0.1
+    stt: 0.2
+
+    # Update thresholds (when to insert a new scan / update particles)
+    linearUpdate: 0.2     # m of motion before processing a scan
+    angularUpdate: 0.2    # rad of rotation before processing a scan
+    temporalUpdate: 1.0   # seconds; -1 disables time-based updates
+    resampleThreshold: 0.5
+    particles: 50
+
+    # Initial map (will grow automatically) and resolution
+    xmin: -20.0
+    ymin: -20.0
+    xmax:  20.0
+    ymax:  20.0
+    delta: 0.05           # map resolution (m/cell)
+    occ_thresh: 0.25      # occupancy threshold for the published grid
+
+    # Likelihood sampling
+    llsamplerange: 0.01
+    llsamplestep:  0.01
+    lasamplerange: 0.005
+    lasamplestep:  0.005

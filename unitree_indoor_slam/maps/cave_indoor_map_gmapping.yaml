@@ -1,0 +1,7 @@
+image: cave_indoor_map_gmapping.pgm
+mode: trinary
+resolution: 0.050
+origin: [-45.600, -44.000, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
