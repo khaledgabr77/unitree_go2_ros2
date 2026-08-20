@@ -147,16 +147,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"use_sim_time": use_sim_time},
-            {"base_link_frame": "base_footprint"},
-            {"odom_frame": "odom"},
-            {"world_frame": "odom"},
-            {"publish_tf": True},
-            {"frequency": 50.0},
-            {"two_d_mode": True},
-            {"odom0": "odom/raw"},
-            {"odom0_config": [False, False, False, False, False, False, True, True, False, False, False, True, False, False, False]},
-            {"imu0": "imu/data"},
-            {"imu0_config": [False, False, False, False, False, True, False, False, False, False, False, True, False, False, False]},
+            os.path.join(
+                get_package_share_directory("champ_base"),
+                "config",
+                "ekf",
+                "footprint_to_odom.yaml",
+            ),
         ],
         remappings=[("odometry/filtered", "odom")],
     )
