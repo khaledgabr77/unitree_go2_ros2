@@ -68,7 +68,6 @@ class StateEstimation: public rclcpp::Node
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr foot_publisher_;
     
 
-    std::unique_ptr<tf2_ros::TransformBroadcaster> base_broadcaster_;
     
     rclcpp::TimerBase::SharedPtr odom_data_timer_;
     rclcpp::TimerBase::SharedPtr base_pose_timer_;

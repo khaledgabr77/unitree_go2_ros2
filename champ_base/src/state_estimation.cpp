@@ -41,8 +41,6 @@ StateEstimation::StateEstimation():
 {
     last_vel_time_ = clock_.now();
     last_sync_time_ = clock_.now();
-    base_broadcaster_ =
-      std::make_unique<tf2_ros::TransformBroadcaster>(*this);
       
     joint_states_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this),  "joint_states");
     foot_contacts_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this), "foot_contacts");
