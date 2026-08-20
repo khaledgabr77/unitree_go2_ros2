@@ -1,29 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 <xacro:macro name="unitree_go2_gazebo" params="robot_controllers">
-  <!-- Gazebo Sim plugins -->
-  <gazebo>
-    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
-      <publish_link_pose>true</publish_link_pose>
-      <publish_sensor_pose>true</publish_sensor_pose>
-      <publish_collision_pose>false</publish_collision_pose>
-      <publish_visual_pose>false</publish_visual_pose>
-      <publish_nested_model_pose>false</publish_nested_model_pose>
-      <use_pose_vector_msg>true</use_pose_vector_msg>
-      <static_publisher>true</static_publisher>
-      <static_update_frequency>100</static_update_frequency>
-    </plugin>
-  </gazebo>
-
-        <!-- Robot-wide physics properties -->
-        <!-- <gazebo>
-            <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
-                <engine>
-                    <filename>gz-physics-bullet-plugin</filename>
-                </engine>
-            </plugin>
-        </gazebo> -->
-
   <!-- ROS2 Control plugin -->
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
@@ -37,8 +14,9 @@
             <plugin filename="gz-sim-odometry-publisher-system"
                 name="gz::sim::systems::OdometryPublisher">
                 <odom_frame>odom</odom_frame>
+                <dimensions>3</dimensions>
                 <robot_base_frame>base_link</robot_base_frame>
-                <odom_topic>/odom</odom_topic>
+                <odom_topic>/odom/ground_truth</odom_topic>
                 <odom_publish_frequency>50</odom_publish_frequency>
             </plugin>
         </gazebo>
@@ -48,7 +26,7 @@
             <sensor name="imu_sensor" type="imu">
                 <always_on>true</always_on>
                 <update_rate>100</update_rate>
-                <visualize>true</visualize>
+                <visualize>false</visualize>
                 <topic>imu/data</topic>
                 <gz_frame_id>imu_link</gz_frame_id>
                 <imu>
