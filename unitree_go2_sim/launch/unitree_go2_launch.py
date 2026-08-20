@@ -19,7 +19,6 @@ from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitut
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
-    base_frame = "base_link"
 
     unitree_go2_sim = launch_ros.substitutions.FindPackageShare(
         package="unitree_go2_sim").find("unitree_go2_sim")
@@ -130,7 +129,6 @@ def generate_launch_description():
         name="base_to_footprint_ekf",
         output="screen",
         parameters=[
-            {"base_link_frame": base_frame},
             {"use_sim_time": use_sim_time},
             os.path.join(
                 get_package_share_directory("champ_base"),
