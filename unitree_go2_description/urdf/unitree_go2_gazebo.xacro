@@ -190,9 +190,21 @@
         <gazebo reference="lf_foot_link">
             <mu1>0.6</mu1>
             <mu2>0.6</mu2>
-            <self_collide>1</self_collide>
             <kp>10000.0</kp>
             <kd>1.0</kd>
+            <sensor name="lf_foot_contact_sensor" type="contact">
+                <always_on>true</always_on>
+                <update_rate>100.0</update_rate>
+                <contact>
+                    <collision>lf_foot_link_collision</collision>
+                    <topic>/lf_foot_contacts</topic>
+                </contact>
+            </sensor>
+        </gazebo>
+        <!-- Keep the fixed foot joint, otherwise Gazebo lumps the foot link
+             into the lower leg and the contact sensor has no collision -->
+        <gazebo reference="lf_foot_joint">
+            <preserveFixedJoint>true</preserveFixedJoint>
         </gazebo>
 
         <!-- FR leg -->
@@ -215,9 +227,21 @@
         <gazebo reference="rf_foot_link">
             <mu1>0.6</mu1>
             <mu2>0.6</mu2>
-            <self_collide>1</self_collide>
             <kp>10000.0</kp>
             <kd>1.0</kd>
+            <sensor name="rf_foot_contact_sensor" type="contact">
+                <always_on>true</always_on>
+                <update_rate>100.0</update_rate>
+                <contact>
+                    <collision>rf_foot_link_collision</collision>
+                    <topic>/rf_foot_contacts</topic>
+                </contact>
+            </sensor>
+        </gazebo>
+        <!-- Keep the fixed foot joint, otherwise Gazebo lumps the foot link
+             into the lower leg and the contact sensor has no collision -->
+        <gazebo reference="rf_foot_joint">
+            <preserveFixedJoint>true</preserveFixedJoint>
         </gazebo>
 
         <!-- RL leg -->
@@ -240,9 +264,21 @@
         <gazebo reference="lh_foot_link">
             <mu1>0.6</mu1>
             <mu2>0.6</mu2>
-            <self_collide>1</self_collide>
             <kp>10000.0</kp>
             <kd>1.0</kd>
+            <sensor name="lh_foot_contact_sensor" type="contact">
+                <always_on>true</always_on>
+                <update_rate>100.0</update_rate>
+                <contact>
+                    <collision>lh_foot_link_collision</collision>
+                    <topic>/lh_foot_contacts</topic>
+                </contact>
+            </sensor>
+        </gazebo>
+        <!-- Keep the fixed foot joint, otherwise Gazebo lumps the foot link
+             into the lower leg and the contact sensor has no collision -->
+        <gazebo reference="lh_foot_joint">
+            <preserveFixedJoint>true</preserveFixedJoint>
         </gazebo>
 
   <!-- RR leg -->
@@ -265,10 +301,22 @@
   <gazebo reference="rh_foot_link">
     <mu1>0.6</mu1>
     <mu2>0.6</mu2>
-    <self_collide>1</self_collide>
     <kp>10000.0</kp>
     <kd>1.0</kd>
-  </gazebo>
+            <sensor name="rh_foot_contact_sensor" type="contact">
+                <always_on>true</always_on>
+                <update_rate>100.0</update_rate>
+                <contact>
+                    <collision>rh_foot_link_collision</collision>
+                    <topic>/rh_foot_contacts</topic>
+                </contact>
+            </sensor>
+        </gazebo>
+        <!-- Keep the fixed foot joint, otherwise Gazebo lumps the foot link
+             into the lower leg and the contact sensor has no collision -->
+        <gazebo reference="rh_foot_joint">
+            <preserveFixedJoint>true</preserveFixedJoint>
+        </gazebo>
 
 </xacro:macro>
 </robot>

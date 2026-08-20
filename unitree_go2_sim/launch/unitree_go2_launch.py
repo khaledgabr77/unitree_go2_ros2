@@ -123,7 +123,6 @@ def generate_launch_description():
             links_config,
             gait_config,
             {"hardware_connected": False},
-            {"publish_foot_contacts": False},
             {"close_loop_odom": True},
         ],
         remappings=[("/cmd_vel/smooth", "/cmd_vel")],
@@ -249,6 +248,12 @@ def generate_launch_description():
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/gps/fix@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
 
+            # Foot contact sensors
+            '/lf_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/rf_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/lh_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/rh_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+
             # ROS to Gazebo
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
@@ -293,10 +298,7 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='velodyne_bridge',
         output='screen',
-        arguments=[
-            '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-        ],
+        arguments=[ '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked', ],
         condition=UnlessCondition(LaunchConfiguration('disable_velodyne_lidar')),
     )
 
