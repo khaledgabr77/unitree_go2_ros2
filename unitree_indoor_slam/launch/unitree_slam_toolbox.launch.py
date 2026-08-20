@@ -6,9 +6,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from launch_ros.actions import LifecycleNode, Node
 from launch.actions import EmitEvent, RegisterEventHandler
-from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch_ros.event_handlers import OnStateTransition
 from lifecycle_msgs.msg import Transition
@@ -64,6 +63,13 @@ def generate_launch_description():
         output="screen",
     )
 
+    # async_slam_toolbox_node is a lifecycle node and does NOT self-activate:
+    # `autostart` is a nav2_lifecycle_manager parameter, not a slam_toolbox one
+    # (the string does not appear anywhere in the slam_toolbox binaries), so
+    # putting it in slam_toolbox_params.yaml has no effect. The configure /
+    # activate events at the bottom of this file are the only thing that drives
+    # unconfigured -> inactive -> active. Without them the node sits in
+    # `unconfigured`, never subscribes to /scan and never publishes map->odom.
     slam_toolbox_node = LifecycleNode(
         package="slam_toolbox",
         executable="async_slam_toolbox_node",
@@ -73,7 +79,6 @@ def generate_launch_description():
             slam_params,
             {"use_sim_time": use_sim_time},
         ],
-        remappings=[("/scan", "/scan")],
         output="screen",
     )
 
@@ -91,10 +96,15 @@ def generate_launch_description():
         transition_id=Transition.TRANSITION_CONFIGURE,
     ))
 
+    # Fires once, on the configuring -> inactive transition, and then
+    # unregisters itself; re-firing would try to ACTIVATE an already-active
+    # node and log "Unable to start transition 3 from current state active".
     activate_after_configure = RegisterEventHandler(
         OnStateTransition(
             target_lifecycle_node=slam_toolbox_node,
+            start_state='configuring',
             goal_state='inactive',
+            handle_once=True,
             entities=[EmitEvent(event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(slam_toolbox_node),
                 transition_id=Transition.TRANSITION_ACTIVATE,

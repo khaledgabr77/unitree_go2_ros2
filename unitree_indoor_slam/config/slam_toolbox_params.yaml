@@ -2,10 +2,10 @@
 slam_toolbox:
   ros__parameters:
 
-    # Auto-transition the lifecycle: unconfigured -> inactive -> active on startup
-    # so the node subscribes to /scan and publishes map->odom without manual
-    # `ros2 lifecycle set ... configure/activate` calls.
-    autostart: true
+    # NOTE: do not add `autostart` here. It is a nav2_lifecycle_manager
+    # parameter, not a slam_toolbox one, so it is silently ignored and the node
+    # stays in `unconfigured` forever. The lifecycle is driven by the
+    # configure/activate events in launch/unitree_slam_toolbox.launch.py.
 
     # Plugin params
     solver_plugin: solver_plugins::CeresSolver
