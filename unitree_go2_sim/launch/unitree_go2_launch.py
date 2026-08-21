@@ -2,19 +2,18 @@ import os
 
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    GroupAction,
     TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, LaunchConfiguration
 
 
 def generate_launch_description():
@@ -81,10 +80,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="screen",
-        parameters=[
-            robot_description,
-            {"use_sim_time": use_sim_time}
-        ],
+        parameters=[ robot_description ],
     )
     
     # CHAMP controller nodes
@@ -93,7 +89,6 @@ def generate_launch_description():
         executable="quadruped_controller_node",
         output="screen",
         parameters=[
-            {"use_sim_time": use_sim_time},
             {"gazebo": True},
             {"publish_joint_states": True},
             {"publish_joint_control": True},
@@ -115,7 +110,6 @@ def generate_launch_description():
         executable="state_estimation_node",
         output="screen",
         parameters=[
-            {"use_sim_time": use_sim_time},
             {"orientation_from_imu": True},
             {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
             joints_config,
@@ -168,7 +162,6 @@ def generate_launch_description():
         package='tf2_ros',
         name='map_to_odom_tf_node',
         executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             '--x', '0', '--y', '0', '--z', '0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
@@ -181,7 +174,6 @@ def generate_launch_description():
         package='tf2_ros',
         name='base_footprint_to_base_link_tf_node',
         executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             '--x', '0', '--y', '0', '--z', '0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
@@ -195,7 +187,6 @@ def generate_launch_description():
         name='rviz2',
         arguments=['-d', os.path.join(unitree_go2_sim, "rviz/rviz.rviz")],
         condition=IfCondition(LaunchConfiguration("rviz")),
-        # parameters=[{"use_sim_time": use_sim_time}]
     )
     
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
@@ -205,11 +196,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
         launch_arguments={
-            'gz_args': [PathJoinSubstitution([
-                unitree_go2_description,
-                'worlds',
-                'default.sdf'
-            ]), ' -r']  # Add -r flag to start unpaused
+            'gz_args': [LaunchConfiguration('world'), ' -r']  # Add -r flag to start unpaused
         }.items(),
     )
     
@@ -234,7 +221,6 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='gazebo_bridge',
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             # Gazebo to ROS
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
@@ -271,7 +257,6 @@ def generate_launch_description():
                     "--controller-manager-timeout", "120",  # Longer timeout
                     "joint_states_controller",  # No --inactive flag to ensure full activation
                 ],
-                parameters=[{"use_sim_time": use_sim_time}],
             )
         ]
     )
@@ -287,7 +272,6 @@ def generate_launch_description():
                     "--controller-manager-timeout", "120",  # Longer timeout
                     "joint_group_effort_controller",  # No --inactive flag to ensure full activation
                 ],
-                parameters=[{"use_sim_time": use_sim_time}],
             )
         ]
     )
@@ -318,7 +302,10 @@ def generate_launch_description():
             declare_world_init_z,
             declare_world_init_heading,
             declare_description_path, 
-            
+
+            # Parameters
+            SetParameter(name="use_sim_time", value=use_sim_time),
+
             # Gazebo and robot nodes first
             gz_sim,
             robot_state_publisher_node,
