@@ -18,7 +18,6 @@ from launch.substitutions import Command, LaunchConfiguration
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
-    base_frame = "base_link"
 
     unitree_go2_sim = launch_ros.substitutions.FindPackageShare(
         package="unitree_go2_sim").find("unitree_go2_sim")
@@ -124,7 +123,6 @@ def generate_launch_description():
         name="base_to_footprint_ekf",
         output="screen",
         parameters=[
-            {"base_link_frame": base_frame},
             {"use_sim_time": use_sim_time},
             os.path.join(
                 get_package_share_directory("champ_base"),
@@ -143,16 +141,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"use_sim_time": use_sim_time},
-            {"base_link_frame": "base_footprint"},
-            {"odom_frame": "odom"},
-            {"world_frame": "odom"},
-            {"publish_tf": True},
-            {"frequency": 50.0},
-            {"two_d_mode": True},
-            {"odom0": "odom/raw"},
-            {"odom0_config": [False, False, False, False, False, False, True, True, False, False, False, True, False, False, False]},
-            {"imu0": "imu/data"},
-            {"imu0_config": [False, False, False, False, False, True, False, False, False, False, False, True, False, False, False]},
+            os.path.join(
+                get_package_share_directory("champ_base"),
+                "config",
+                "ekf",
+                "footprint_to_odom.yaml",
+            ),
         ],
         remappings=[("odometry/filtered", "odom")],
     )
