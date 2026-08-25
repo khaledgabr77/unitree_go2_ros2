@@ -32,7 +32,7 @@ CHAMP (Coupled Hybrid Automata for Mobile Platforms) is an open-source developme
   - ✅ 3D LiDAR (Velodyne)
   - ✅ 3D LiDAR (4D Lidar L1) (need some imporvments)
   - ✅ Mono Camera
-  - ❌ Depth Camera
+  - ✅ Depth Camera (RealSense D455)
   - ✅ GPS (NavSat — simulates standard u-blox, ~0.5 m horizontal accuracy)
 - ✅ Point cloud visualization in RVIZ
 - ✅ Multiple sensor configurations available
