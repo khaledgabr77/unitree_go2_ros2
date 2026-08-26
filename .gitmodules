@@ -1,0 +1,3 @@
+[submodule "ros2_gmapping"]
+	path = ros2_gmapping
+	url = https://github.com/khaledgabr77/ros2_gmapping
