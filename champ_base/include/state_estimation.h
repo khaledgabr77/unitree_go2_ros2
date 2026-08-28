@@ -76,9 +76,9 @@ class StateEstimation: public rclcpp::Node
     geometry::Transformation current_foot_positions_[4];
     geometry::Transformation target_foot_positions_[4];
 
-    float x_pos_;
-    float y_pos_;
-    float heading_;
+    float x_pos_ = 0.0f;
+    float y_pos_ = 0.0f;
+    float heading_ = 0.0f;
 
     rclcpp::Time last_vel_time_;
     rclcpp::Time last_sync_time_;
