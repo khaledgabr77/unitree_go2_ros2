@@ -11,7 +11,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     TimerAction,
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 
@@ -87,16 +87,19 @@ def generate_launch_description():
     declare_disable_velodyne_lidar = DeclareLaunchArgument(
         "disable_velodyne_lidar", default_value="false", description="Leave out the Velodyne lidar"
     )
-    
+
     # Description nodes and parameters
-    robot_description = {"robot_description": Command(["xacro ", LaunchConfiguration("unitree_go2_description_path"),
-                                                       " robot_controllers:=", LaunchConfiguration("ros_control_file"),
-                                                       " command_interface:=", LaunchConfiguration("command_interface"),
-                                                       " disable_camera:=", LaunchConfiguration("disable_camera"),
-                                                       " disable_d455:=", LaunchConfiguration("disable_d455"),
-                                                       " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
-                                                       " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar")])}
-    
+    description_command = Command([
+        "xacro ", LaunchConfiguration("unitree_go2_description_path"),
+        " robot_controllers:=", LaunchConfiguration("ros_control_file"),
+        " command_interface:=", LaunchConfiguration("command_interface"),
+        " disable_camera:=", LaunchConfiguration("disable_camera"),
+        " disable_d455:=", LaunchConfiguration("disable_d455"),
+        " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
+        " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar"),
+    ])
+    robot_description = {"robot_description": description_command}
+
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -115,7 +118,7 @@ def generate_launch_description():
             {"publish_joint_control": True},
             {"publish_foot_contacts": False},
             {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
-            {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
+            {"urdf": description_command},
             joints_config,
             links_config,
             gait_config,
@@ -132,7 +135,7 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"orientation_from_imu": True},
-            {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
+            {"urdf": description_command},
             joints_config,
             links_config,
             gait_config,
@@ -231,7 +234,7 @@ def generate_launch_description():
         ],
     )
     
-    # Bridge ROS 2 topics to Gazebo Sim
+    # Bridge ROS 2 and Gazebo Sim
     gazebo_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -243,24 +246,60 @@ def generate_launch_description():
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
             '/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model',
-            '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/gps/fix@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
-            '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
-            # D455 RGBD camera bridges
-            '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/d455/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/d455/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-            '/d455/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
 
             # ROS to Gazebo
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
         ],
     )
-    
+
+    # Optional sensor bridges, gated by the same flags the description uses
+    camera_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='camera_bridge',
+        output='screen',
+        arguments=[ '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image', ],
+        condition=UnlessCondition(LaunchConfiguration('disable_camera')),
+    )
+
+    d455_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='d455_bridge',
+        output='screen',
+        arguments=[
+            '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/d455/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/d455/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/d455/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+        ],
+        condition=UnlessCondition(LaunchConfiguration('disable_d455')),
+    )
+
+    lidar_l1_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='lidar_l1_bridge',
+        output='screen',
+        arguments=[ '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked', ],
+        condition=UnlessCondition(LaunchConfiguration('disable_lidar_l1')),
+    )
+
+    velodyne_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='velodyne_bridge',
+        output='screen',
+        arguments=[
+            '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
+            # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+        ],
+        condition=UnlessCondition(LaunchConfiguration('disable_velodyne_lidar')),
+    )
+
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
         period=20.0,  # Wait for Gazebo to fully initialize
@@ -332,6 +371,10 @@ def generate_launch_description():
             robot_state_publisher_node,
             gazebo_spawn_robot,
             gazebo_bridge,
+            camera_bridge,
+            d455_bridge,
+            lidar_l1_bridge,
+            velodyne_bridge,
             
             # CHAMP controller nodes
             quadruped_controller_node,
