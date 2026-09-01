@@ -95,6 +95,39 @@ ros2 launch unitree_go2_sim unitree_go2_launch.py
 
 ![Unitree Go2 Simulation](docs/unitree_go2_sim.png)
 
+#### Joint command interface
+
+The joints are driven through `ros2_control`. By default the effort
+interface is used, matching `joint_group_effort_controller` in
+`unitree_go2_sim/config/ros_control/ros_control.yaml`. If needed,
+can be changed to position interface with:
+
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py command_interface:=position
+```
+
+Remember to switch the spawned controller in `ros_control.yaml` to a
+position controller as well, otherwise the controller manager will fail to
+claim the joints.
+
+#### Leaving sensors out
+
+All sensors are mounted by default. Each one can be left out of the robot
+description, which is useful when running headless or on a machine that
+struggles with the point cloud sensors:
+
+| Argument | Sensor |
+|----------|--------|
+| `disable_camera` | mono RGB camera |
+| `disable_d455` | RealSense D455 RGBD camera |
+| `disable_lidar_l1` | 4D Lidar L1 |
+| `disable_velodyne_lidar` | Velodyne VLP-16 |
+
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py \
+    disable_velodyne_lidar:=true disable_d455:=true
+```
+
 [Watch Demo on YouTube](https://youtu.be/NUu7TaZhaQM)
 
 ### RVIZ Visualization

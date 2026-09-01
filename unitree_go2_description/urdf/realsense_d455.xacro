@@ -5,32 +5,35 @@
     <!-- Include the RealSense D455 URDF macro from realsense2_description -->
     <xacro:include filename="$(find realsense2_description)/urdf/_d455.urdf.xacro"/>
 
-    <!-- Mount the D455 on top of the trunk, in front of the velodyne lidar -->
-    <xacro:sensor_d455 parent="trunk" name="d455_camera" use_nominal_extrinsics="true">
-        <origin xyz="0.28 0 0.062" rpy="0 0 0"/>
-    </xacro:sensor_d455>
+    <xacro:macro name="d455_camera">
 
-    <!-- Gazebo Sim RGBD Camera sensor plugin -->
-    <gazebo reference="d455_camera_link">
-        <sensor name="d455_rgbd_camera" type="rgbd_camera">
-            <pose>0 0 0 0 0 0</pose>
-            <camera>
-                <horizontal_fov>1.489</horizontal_fov>
-                <image>
-                    <width>640</width>
-                    <height>480</height>
-                </image>
-                <clip>
-                    <near>0.1</near>
-                    <far>10.0</far>
-                </clip>
-            </camera>
-            <always_on>1</always_on>
-            <update_rate>15</update_rate>
-            <visualize>true</visualize>
-            <topic>d455</topic>
-            <gz_frame_id>d455_camera_link</gz_frame_id>
-        </sensor>
-    </gazebo>
+        <!-- Mount the D455 on top of the trunk, in front of the velodyne lidar -->
+        <xacro:sensor_d455 parent="trunk" name="d455_camera" use_nominal_extrinsics="true">
+            <origin xyz="0.28 0 0.062" rpy="0 0 0"/>
+        </xacro:sensor_d455>
 
+        <!-- Gazebo Sim RGBD Camera sensor plugin -->
+        <gazebo reference="d455_camera_link">
+            <sensor name="d455_rgbd_camera" type="rgbd_camera">
+                <pose>0 0 0 0 0 0</pose>
+                <camera>
+                    <horizontal_fov>1.489</horizontal_fov>
+                    <image>
+                        <width>640</width>
+                        <height>480</height>
+                    </image>
+                    <clip>
+                        <near>0.1</near>
+                        <far>10.0</far>
+                    </clip>
+                </camera>
+                <always_on>1</always_on>
+                <update_rate>15</update_rate>
+                <visualize>true</visualize>
+                <topic>d455</topic>
+                <gz_frame_id>d455_camera_link</gz_frame_id>
+            </sensor>
+        </gazebo>
+
+    </xacro:macro>
 </robot>
