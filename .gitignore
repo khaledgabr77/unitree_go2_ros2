@@ -1,6 +1,13 @@
-__pycache__/
-*.pyc
-.vscode/
+# ROS
 build/
 install/
 log/
+
+# Python
+__pycache__/
+
+# Editors and tooling
+.vscode/
+.cache/
+.envrc.local
+compile_commands.json
