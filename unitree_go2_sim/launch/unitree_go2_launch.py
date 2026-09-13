@@ -181,18 +181,6 @@ def generate_launch_description():
         remappings=[("odometry/filtered", "odom")],
     )
 
-    # Go2 static frame connection (map -> odom)
-    map_to_odom_tf_node = Node(
-        package='tf2_ros',
-        name='map_to_odom_tf_node',
-        executable='static_transform_publisher',
-        arguments=[
-            '--x', '0', '--y', '0', '--z', '0',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
-            '--frame-id', 'map', '--child-frame-id', 'odom'
-        ],
-    )
-
     rviz2 = Node(
         package='rviz2',
         executable='rviz2',
@@ -372,9 +360,6 @@ def generate_launch_description():
             # EKF nodes for localization
             base_to_footprint_ekf,
             footprint_to_odom_ekf,
-            
-            # Static TF publisher for frame connections
-            map_to_odom_tf_node,
             
             # Controller spawners that handle the complete lifecycle
             controller_spawner_js,

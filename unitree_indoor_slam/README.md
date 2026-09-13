@@ -548,13 +548,6 @@ The Nav2 bringup in `unitree_indoor_nav2` defaults to
 
 ## 12. Known limitations
 
-* **The sim launch publishes a static `map→odom`.** `unitree_go2_sim`'s launch
-  file starts `map_to_odom_tf_node`, an unconditional
-  `static_transform_publisher` for `map→odom`, and every SLAM back-end publishes
-  that same transform. Two publishers on one edge make TF alternate between
-  them, so the map will appear to jump. Until that node is made optional, kill
-  it after bringup (`ros2 node list | grep map_to_odom`) or run the sim and SLAM
-  from separate launches with it removed.
 * **Odometry is EKF-fused leg odometry, not ground truth.** `odom→base_link`
   runs through the two `robot_localization` EKFs over CHAMP's `/odom/raw` and
   the IMU, so it drifts the way the real robot's does. Gazebo's
