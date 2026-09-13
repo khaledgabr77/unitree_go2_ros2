@@ -3,6 +3,7 @@ import os
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node, SetParameter
+from launch_ros.parameter_descriptions import ParameterValue
 
 from launch import LaunchDescription
 from launch.actions import (
@@ -98,13 +99,13 @@ def generate_launch_description():
         " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
         " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar"),
     ])
-    robot_description = {"robot_description": description_command}
+    robot_urdf = ParameterValue(description_command, value_type=str)
 
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="screen",
-        parameters=[ robot_description ],
+        parameters=[ {"robot_description": robot_urdf} ],
     )
     
     # CHAMP controller nodes
@@ -118,7 +119,7 @@ def generate_launch_description():
             {"publish_joint_control": True},
             {"publish_foot_contacts": False},
             {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
-            {"urdf": description_command},
+            {"urdf": robot_urdf},
             joints_config,
             links_config,
             gait_config,
@@ -140,7 +141,7 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"orientation_from_imu": True},
-            {"urdf": description_command},
+            {"urdf": robot_urdf},
             joints_config,
             links_config,
             gait_config,
