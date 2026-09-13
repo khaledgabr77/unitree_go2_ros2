@@ -5,7 +5,6 @@ base_to_footprint_ekf:
     transform_timeout: 0.01
     transform_time_offset: 0.045
     two_d_mode: false
-    # diagnostics_agg: true
 
     #x     , y     , z,
     #roll  , pitch , yaw,
@@ -15,21 +14,19 @@ base_to_footprint_ekf:
 
     pose0: base_to_footprint_pose
     pose0_config: [true,  true,  true,
-                  true,  true,  true,
-                  false, false, false,
-                  false, false, false,
-                  false, false, false]
+                   true,  true,  true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
 
     imu0: imu/data
-    # imu0_config: [false, false, false,
-    #               false, false, false,
-    #               true, true, true,
-    #               false, false, false,
-    #               false, false, false]
+    imu0_remove_gravitational_acceleration: true
     imu0_config: [false, false, false,
-                  true, true, true,    # Use orientation (roll, pitch, yaw)
+                  true,  true,  false,
                   false, false, false,
-                  true, true, true,    # Use angular velocity (vroll, vpitch, vyaw)
-                  true, true, true]    # Use linear acceleration (ax, ay, az)
+                  true,  true,  false,
+                  false, false, true]
+
     odom_frame: base_footprint
+    base_link_frame: base_link
     world_frame: base_footprint

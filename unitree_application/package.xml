@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+    <name>unitree_application</name>
+    <version>0.1.0</version>
+    <description>Application nodes for the Unitree Go2 CHAMP stack</description>
+
+    <maintainer email="sg@cobotory.com">litt</maintainer>
+
+    <license>BSD</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <depend>rclcpp</depend>
+    <depend>champ_msgs</depend>
+    <depend>ros_gz_interfaces</depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+
+</package>

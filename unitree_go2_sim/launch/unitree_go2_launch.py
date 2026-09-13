@@ -2,24 +2,22 @@ import os
 
 import launch_ros
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    GroupAction,
     TimerAction,
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, LaunchConfiguration
 
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
-    base_frame = "base_link"
 
     unitree_go2_sim = launch_ros.substitutions.FindPackageShare(
         package="unitree_go2_sim").find("unitree_go2_sim")
@@ -72,19 +70,41 @@ def generate_launch_description():
         default_value=default_model_path,
         description="Path to the robot description xacro file",
     )
-    
+    declare_command_interface = DeclareLaunchArgument(
+        "command_interface",
+        default_value="effort",
+        description="ros2_control joint command interface: effort or position",
+    )
+    declare_disable_camera = DeclareLaunchArgument(
+        "disable_camera", default_value="false", description="Leave out the mono camera"
+    )
+    declare_disable_d455 = DeclareLaunchArgument(
+        "disable_d455", default_value="false", description="Leave out the RealSense D455"
+    )
+    declare_disable_lidar_l1 = DeclareLaunchArgument(
+        "disable_lidar_l1", default_value="false", description="Leave out the 4D Lidar L1"
+    )
+    declare_disable_velodyne_lidar = DeclareLaunchArgument(
+        "disable_velodyne_lidar", default_value="false", description="Leave out the Velodyne lidar"
+    )
+
     # Description nodes and parameters
-    robot_description = {"robot_description": Command(["xacro ", LaunchConfiguration("unitree_go2_description_path"),
-                                                       " robot_controllers:=", LaunchConfiguration("ros_control_file")])}
-    
+    description_command = Command([
+        "xacro ", LaunchConfiguration("unitree_go2_description_path"),
+        " robot_controllers:=", LaunchConfiguration("ros_control_file"),
+        " command_interface:=", LaunchConfiguration("command_interface"),
+        " disable_camera:=", LaunchConfiguration("disable_camera"),
+        " disable_d455:=", LaunchConfiguration("disable_d455"),
+        " disable_lidar_l1:=", LaunchConfiguration("disable_lidar_l1"),
+        " disable_velodyne_lidar:=", LaunchConfiguration("disable_velodyne_lidar"),
+    ])
+    robot_description = {"robot_description": description_command}
+
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="screen",
-        parameters=[
-            robot_description,
-            {"use_sim_time": use_sim_time}
-        ],
+        parameters=[ robot_description ],
     )
     
     # CHAMP controller nodes
@@ -93,21 +113,25 @@ def generate_launch_description():
         executable="quadruped_controller_node",
         output="screen",
         parameters=[
-            {"use_sim_time": use_sim_time},
             {"gazebo": True},
             {"publish_joint_states": True},
             {"publish_joint_control": True},
             {"publish_foot_contacts": False},
             {"joint_controller_topic": "joint_group_effort_controller/joint_trajectory"},
-            {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
+            {"urdf": description_command},
             joints_config,
             links_config,
             gait_config,
             {"hardware_connected": False},
-            {"publish_foot_contacts": False},
             {"close_loop_odom": True},
         ],
         remappings=[("/cmd_vel/smooth", "/cmd_vel")],
+    )
+
+    foot_contacts_bridge_node = Node(
+        package="unitree_application",
+        executable="foot_contacts_bridge",
+        output="screen",
     )
 
     state_estimator_node = Node(
@@ -115,9 +139,8 @@ def generate_launch_description():
         executable="state_estimation_node",
         output="screen",
         parameters=[
-            {"use_sim_time": use_sim_time},
             {"orientation_from_imu": True},
-            {"urdf": Command(['xacro ', LaunchConfiguration('unitree_go2_description_path')])},
+            {"urdf": description_command},
             joints_config,
             links_config,
             gait_config,
@@ -130,7 +153,6 @@ def generate_launch_description():
         name="base_to_footprint_ekf",
         output="screen",
         parameters=[
-            {"base_link_frame": base_frame},
             {"use_sim_time": use_sim_time},
             os.path.join(
                 get_package_share_directory("champ_base"),
@@ -149,16 +171,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"use_sim_time": use_sim_time},
-            {"base_link_frame": "base_footprint"},
-            {"odom_frame": "odom"},
-            {"world_frame": "odom"},
-            {"publish_tf": True},
-            {"frequency": 50.0},
-            {"two_d_mode": True},
-            {"odom0": "odom/raw"},
-            {"odom0_config": [False, False, False, False, False, False, True, True, False, False, False, True, False, False, False]},
-            {"imu0": "imu/data"},
-            {"imu0_config": [False, False, False, False, False, True, False, False, False, False, False, True, False, False, False]},
+            os.path.join(
+                get_package_share_directory("champ_base"),
+                "config",
+                "ekf",
+                "footprint_to_odom.yaml",
+            ),
         ],
         remappings=[("odometry/filtered", "odom")],
     )
@@ -168,24 +186,10 @@ def generate_launch_description():
         package='tf2_ros',
         name='map_to_odom_tf_node',
         executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             '--x', '0', '--y', '0', '--z', '0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
             '--frame-id', 'map', '--child-frame-id', 'odom'
-        ],
-    )
-    
-    # Go2 URDF connection (base_footprint -> base_link)  
-    base_footprint_to_base_link_tf_node = Node(
-        package='tf2_ros',
-        name='base_footprint_to_base_link_tf_node',
-        executable='static_transform_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
-        arguments=[
-            '--x', '0', '--y', '0', '--z', '0',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
-            '--frame-id', 'base_footprint', '--child-frame-id', 'base_link'
         ],
     )
 
@@ -195,7 +199,6 @@ def generate_launch_description():
         name='rviz2',
         arguments=['-d', os.path.join(unitree_go2_sim, "rviz/rviz.rviz")],
         condition=IfCondition(LaunchConfiguration("rviz")),
-        # parameters=[{"use_sim_time": use_sim_time}]
     )
     
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
@@ -205,11 +208,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
         launch_arguments={
-            'gz_args': [PathJoinSubstitution([
-                unitree_go2_description,
-                'worlds',
-                'default.sdf'
-            ]), ' -r']  # Add -r flag to start unpaused
+            'gz_args': [LaunchConfiguration('world'), ' -r']  # Add -r flag to start unpaused
         }.items(),
     )
     
@@ -228,37 +227,67 @@ def generate_launch_description():
         ],
     )
     
-    # Bridge ROS 2 topics to Gazebo Sim
+    # Bridge ROS 2 and Gazebo Sim
     gazebo_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         name='gazebo_bridge',
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
-            # Gazebo to ROS
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
-            '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model',
-            '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
-            # '/velodyne_points@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-            '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+            '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
-            '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image',
-            # D455 RGBD camera bridges
+            '/odom/ground_truth@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+
+            '/lf_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/rf_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/lh_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+            '/rh_foot_contacts@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+        ],
+    )
+
+    # Optional sensor bridges, gated by the same flags the description uses
+    camera_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='camera_bridge',
+        output='screen',
+        arguments=[ '/rgb_image@sensor_msgs/msg/Image@gz.msgs.Image', ],
+        condition=UnlessCondition(LaunchConfiguration('disable_camera')),
+    )
+
+    d455_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='d455_bridge',
+        output='screen',
+        arguments=[
             '/d455/image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/d455/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/d455/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
             '/d455/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
-
-            # ROS to Gazebo
-            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
-            '/joint_group_effort_controller/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory',
         ],
+        condition=UnlessCondition(LaunchConfiguration('disable_d455')),
     )
-    
+
+    lidar_l1_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='lidar_l1_bridge',
+        output='screen',
+        arguments=[ '/unitree_lidar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked', ],
+        condition=UnlessCondition(LaunchConfiguration('disable_lidar_l1')),
+    )
+
+    velodyne_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='velodyne_bridge',
+        output='screen',
+        arguments=[ '/velodyne_points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked', ],
+        condition=UnlessCondition(LaunchConfiguration('disable_velodyne_lidar')),
+    )
+
     # Use spawner nodes directly to handle the configuration step. (load → configure → activate)
     controller_spawner_js = TimerAction(
         period=20.0,  # Wait for Gazebo to fully initialize
@@ -271,7 +300,6 @@ def generate_launch_description():
                     "--controller-manager-timeout", "120",  # Longer timeout
                     "joint_states_controller",  # No --inactive flag to ensure full activation
                 ],
-                parameters=[{"use_sim_time": use_sim_time}],
             )
         ]
     )
@@ -287,7 +315,6 @@ def generate_launch_description():
                     "--controller-manager-timeout", "120",  # Longer timeout
                     "joint_group_effort_controller",  # No --inactive flag to ensure full activation
                 ],
-                parameters=[{"use_sim_time": use_sim_time}],
             )
         ]
     )
@@ -318,24 +345,36 @@ def generate_launch_description():
             declare_world_init_z,
             declare_world_init_heading,
             declare_description_path, 
-            
+            declare_command_interface,
+            declare_disable_camera,
+            declare_disable_d455,
+            declare_disable_lidar_l1,
+            declare_disable_velodyne_lidar,
+
+            # Parameters
+            SetParameter(name="use_sim_time", value=use_sim_time),
+
             # Gazebo and robot nodes first
             gz_sim,
             robot_state_publisher_node,
             gazebo_spawn_robot,
             gazebo_bridge,
+            camera_bridge,
+            d455_bridge,
+            lidar_l1_bridge,
+            velodyne_bridge,
             
             # CHAMP controller nodes
             quadruped_controller_node,
+            foot_contacts_bridge_node,
             state_estimator_node,
             
             # EKF nodes for localization
             base_to_footprint_ekf,
             footprint_to_odom_ekf,
             
-            # TF publishers for frame connections
+            # Static TF publisher for frame connections
             map_to_odom_tf_node,
-            base_footprint_to_base_link_tf_node,
             
             # Controller spawners that handle the complete lifecycle
             controller_spawner_js,

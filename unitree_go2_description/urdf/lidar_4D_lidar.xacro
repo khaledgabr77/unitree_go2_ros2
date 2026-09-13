@@ -1,74 +1,76 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="lidar_l1">
 
-    <!-- Lidar L1-->
-    <link name="lidar_l1_link">
-        <inertial>
-            <mass value="0.5"/>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
-        </inertial>
-        <visual>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <geometry>
-                <mesh filename="file://$(find unitree_go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
-            </geometry>
-            <material name="black">
-                <color rgba="0.0 0.0 0.0 1.0"/>
-            </material>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <geometry>
-                <mesh filename="file://$(find unitree_go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
-            </geometry>
-            <material name="black">
-                <color rgba="0.0 0.0 0.0 1.0"/>
-            </material>
-        </collision>
-    </link>
+        <!-- Lidar L1-->
+        <link name="lidar_l1_link">
+            <inertial>
+                <mass value="0.5"/>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+            </inertial>
+            <visual>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <geometry>
+                    <mesh filename="file://$(find unitree_go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
+                </geometry>
+                <material name="black">
+                    <color rgba="0.0 0.0 0.0 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <geometry>
+                    <mesh filename="file://$(find unitree_go2_description)/meshes/L1_4D_Lidar.dae" scale="1 1 1"/>
+                </geometry>
+                <material name="black">
+                    <color rgba="0.0 0.0 0.0 1.0"/>
+                </material>
+            </collision>
+        </link>
 
-    <joint name="lidar_l1_joint" type="fixed">
-        <parent link="base_link"/>
-        <child link="lidar_l1_link"/>
-        <!-- <origin rpy="2.94 0 1.5705" xyz="0.25 -0.038 -0.03"/> -->
-        <origin rpy="2.879 0.0 1.5705" xyz="0.25 -0.038 -0.03"/>
-    </joint>
+        <joint name="lidar_l1_joint" type="fixed">
+            <parent link="base_link"/>
+            <child link="lidar_l1_link"/>
+            <!-- <origin rpy="2.94 0 1.5705" xyz="0.25 -0.038 -0.03"/> -->
+            <origin rpy="2.879 0.0 1.5705" xyz="0.25 -0.038 -0.03"/>
+        </joint>
 
-    <gazebo reference="lidar_l1_link">
-        <sensor name="lidar_l1" type="gpu_lidar">
-            <topic>unitree_lidar</topic>
-            <update_rate>10</update_rate>
-            <lidar>
-                <scan>
-                    <horizontal>
-                        <samples>600</samples>
-                        <resolution>1</resolution>
-                        <min_angle>-3.14159</min_angle>
-                        <max_angle>3.14159</max_angle>
-                    </horizontal>
-                    <vertical>
-                        <samples>30</samples>
-                        <resolution>1</resolution>
-                        <min_angle>-0.785398</min_angle>
-                        <max_angle>0.785398</max_angle>
-                    </vertical>
-                </scan>
-                <range>
-                    <min>0.8</min>
-                    <max>30.0</max>
-                    <resolution>0.001</resolution>
-                </range>
-                <noise>
-                    <type>gaussian</type>
-                    <mean>0.0</mean>
-                    <stddev>0.008</stddev>
-                </noise>
-            </lidar>
-            <visualize>false</visualize>
-            <gz_frame_id>lidar_l1_link</gz_frame_id>
-            <always_on>1</always_on>
-        </sensor>
-    </gazebo>
+        <gazebo reference="lidar_l1_link">
+            <sensor name="lidar_l1" type="gpu_lidar">
+                <topic>unitree_lidar</topic>
+                <update_rate>10</update_rate>
+                <lidar>
+                    <scan>
+                        <horizontal>
+                            <samples>600</samples>
+                            <resolution>1</resolution>
+                            <min_angle>-3.14159</min_angle>
+                            <max_angle>3.14159</max_angle>
+                        </horizontal>
+                        <vertical>
+                            <samples>30</samples>
+                            <resolution>1</resolution>
+                            <min_angle>-0.785398</min_angle>
+                            <max_angle>0.785398</max_angle>
+                        </vertical>
+                    </scan>
+                    <range>
+                        <min>0.8</min>
+                        <max>30.0</max>
+                        <resolution>0.001</resolution>
+                    </range>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.008</stddev>
+                    </noise>
+                </lidar>
+                <visualize>false</visualize>
+                <gz_frame_id>lidar_l1_link</gz_frame_id>
+                <always_on>1</always_on>
+            </sensor>
+        </gazebo>
+    </xacro:macro>
 </robot>

@@ -41,8 +41,6 @@ StateEstimation::StateEstimation():
 {
     last_vel_time_ = clock_.now();
     last_sync_time_ = clock_.now();
-    base_broadcaster_ =
-      std::make_unique<tf2_ros::TransformBroadcaster>(*this);
       
     joint_states_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this),  "joint_states");
     foot_contacts_subscriber_.subscribe(reinterpret_cast<rclcpp::Node*>(this), "foot_contacts");
@@ -151,7 +149,7 @@ void StateEstimation::publishFootprintToOdom_()
 
     rclcpp::Time current_time = clock_.now();
 
-    double vel_dt = (current_time - last_vel_time_).nanoseconds()/1e-9;
+    double vel_dt = (current_time - last_vel_time_).seconds();
     last_vel_time_ = current_time;
     //rotate in the z axis
     //https://en.wikipedia.org/wiki/Rotation_matrix
