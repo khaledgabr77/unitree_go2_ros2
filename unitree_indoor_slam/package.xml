@@ -18,6 +18,8 @@
   <exec_depend>rtabmap_ros</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>unitree_go2_sim</exec_depend>
+  <exec_depend>unitree_go2_description</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
