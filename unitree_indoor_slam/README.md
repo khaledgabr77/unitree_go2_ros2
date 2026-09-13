@@ -64,8 +64,8 @@ ROS parameters.
 
 The Go2 carries a simulated 16-beam Velodyne VLP-16 (`gpu_lidar` sensor,
 `unitree_go2_description/urdf/velodyne.xacro`). Gazebo publishes it on the gz
-topic `velodyne_points`, and `ros_gz_bridge` (started by `champ_gazebo`)
-exposes it to ROS 2:
+topic `velodyne_points`, and `ros_gz_bridge` (started by the
+`unitree_go2_sim` launch file) exposes it to ROS 2:
 
 ```
 Gazebo gpu_lidar
@@ -93,11 +93,12 @@ raw 3D cloud and does not need it.
 ### 2.2 TF tree
 
 ```
-map ──────────────▶ odom ──────────────▶ base_link ──▶ velodyne_base_link ──▶ velodyne
- │                   │                       │
- │                   │                       └── robot_state_publisher (URDF, static)
- │                   └── Gazebo gz-sim-odometry-publisher-system,
- │                       bridged as /odom_tf and remapped to /tf by champ_gazebo
+map ──────▶ odom ──────▶ base_footprint ──▶ base_link ──▶ velodyne_base_link ──▶ velodyne
+ │            │                 │                   │
+ │            │                 │                   └── robot_state_publisher (URDF, static)
+ │            │                 └── base_to_footprint_ekf (robot_localization)
+ │            └── footprint_to_odom_ekf (robot_localization), fusing CHAMP leg
+ │                odometry with the IMU
  └── published by the SLAM node you launch (slam_toolbox / gmapper / rtabmap)
 ```
 
@@ -105,14 +106,15 @@ Important consequences:
 
 * **The SLAM node owns `map→odom` only.** If two SLAM back-ends run at the same
   time they will fight over that transform — run exactly one.
-* **`odom→base_link` comes from the Gazebo odometry plugin**, i.e. it is
-  essentially ground truth (see [§12](#12-known-limitations)). CHAMP's
-  `state_estimation_node` publishes its own leg odometry on `/odom/raw`, and the
-  two `robot_localization` EKFs in `champ_bringup` are currently commented out,
-  so nothing else competes for `odom→base_link`.
+* **`odom→base_footprint→base_link` comes from the two `robot_localization`
+  EKFs** started by the `unitree_go2_sim` launch file. CHAMP's
+  `state_estimation_node` publishes leg odometry on `/odom/raw`; the EKFs fuse
+  it with the IMU and `footprint_to_odom_ekf` republishes the result on `/odom`.
+  The Gazebo odometry plugin no longer publishes TF — it only emits
+  `/odom/ground_truth`, which is available for comparison but is not in the tree.
 * All three back-ends are configured with `base_frame: base_link`,
-  `odom_frame: odom`, `map_frame: map`. There is no `base_footprint` in this
-  chain — do not set it in the configs.
+  `odom_frame: odom`, `map_frame: map`. `base_footprint` sits between `odom` and
+  `base_link`, but TF resolves through it, so leave the configs on `base_link`.
 
 ### 2.3 Topics
 
@@ -175,23 +177,39 @@ source install/setup.bash
 
 ## 4. Step 1 — start the simulation
 
+The simulation and a SLAM back-end can be started together:
+
 ```bash
 source ~/unitree_ws/install/setup.bash
-ros2 launch unitree_go2_sim unitree_go2_launch.py
+ros2 launch unitree_indoor_slam unitree_sim_slam.launch.py
 ```
 
-Defaults that matter for SLAM:
+This includes `unitree_go2_sim`'s launch file unchanged and starts the chosen
+back-end on top of it after `slam_start_delay` seconds. Defaults that matter:
 
 | Argument | Default | Meaning |
 |---|---|---|
+| `slam` | `slam_toolbox` | back-end to run: `slam_toolbox`, `gmapping` or `rtabmap` |
 | `world` | `unitree_go2_description/worlds/cave_world.sdf` | the indoor cave/tunnel world the shipped maps were recorded in |
 | `world_init_x/y/z` | `-30.0 / 0.0 / 0.35` | spawn just outside the cave opening; `z=0.35` matches the crouched stand pose so the dog does not flip on spawn |
+| `slam_start_delay` | `15.0` | seconds to wait for Gazebo and `/clock`; raise it on slow machines |
 | `use_sim_time` | `true` | everything downstream must match this |
-| `rviz` | `false` | set `rviz:=true` for the sim's own RViz config |
-| `gui` | `true` | set `gui:=false` for headless mapping runs |
+| `rviz` | `true` | opens `rviz/indoor_slam.rviz`; the sim's own RViz is suppressed |
 
-Wait until the controllers are loaded and the robot is standing before starting
-SLAM. Typical console evidence: `joint_states_controller` and
+Note that `unitree_go2_sim` itself defaults to the empty `default.sdf` world at
+the origin — the cave world and its spawn pose are defaults of this wrapper, not
+of the simulation package. Starting the sim directly needs them spelled out:
+
+```bash
+ros2 launch unitree_go2_sim unitree_go2_launch.py \
+  world:=$(ros2 pkg prefix unitree_go2_description)/share/unitree_go2_description/worlds/cave_world.sdf \
+  world_init_x:=-30.0 world_init_y:=0.0 world_init_z:=0.35
+```
+
+Run the two separately (sim in one terminal, §5's SLAM launch in another) when
+you want to watch the controllers come up, or to restart SLAM without restarting
+Gazebo. Wait until the controllers are loaded and the robot is standing before
+starting SLAM. Typical console evidence: `joint_states_controller` and
 `joint_group_effort_controller` spawners exiting with success.
 
 ---
@@ -340,8 +358,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
 `teleop_twist_keyboard` publishes `geometry_msgs/Twist` on `/cmd_vel`, which is
-what `champ_base` consumes (`champ_bringup` remaps `/cmd_vel/smooth → /cmd_vel`
-internally). Keys: `i` forward, `,` backward, `j`/`l` rotate, `k` stop,
+what `champ_base` consumes (the `unitree_go2_sim` launch file remaps
+`/cmd_vel/smooth → /cmd_vel` on `quadruped_controller_node`). Keys: `i` forward, `,` backward, `j`/`l` rotate, `k` stop,
 `q`/`z` change speed.
 
 Mapping technique that gives clean grids in the cave world:
@@ -530,16 +548,18 @@ The Nav2 bringup in `unitree_indoor_nav2` defaults to
 
 ## 12. Known limitations
 
-* **`rviz:=true` does not work yet.** Both 2D launch files point at
-  `rviz/indoor_slam.rviz`, which is not shipped in this package. Until it is
-  added, run `rviz2` manually (Fixed Frame `map`; displays: Map `/map`,
-  LaserScan `/scan`, TF, RobotModel). The RTAB-Map launch's `rviz` argument
-  starts `rtabmap_viz` instead and is unaffected.
-* **Odometry is simulation ground truth.** `odom→base_link` comes from Gazebo's
-  `gz-sim-odometry-publisher-system` plugin, and the `robot_localization` EKFs
-  in `champ_bringup` are commented out. SLAM therefore runs on nearly
-  drift-free odometry — results here are optimistic compared to the real robot,
-  where CHAMP's leg odometry (`/odom/raw`) fused with the IMU would be used.
+* **The sim launch publishes a static `map→odom`.** `unitree_go2_sim`'s launch
+  file starts `map_to_odom_tf_node`, an unconditional
+  `static_transform_publisher` for `map→odom`, and every SLAM back-end publishes
+  that same transform. Two publishers on one edge make TF alternate between
+  them, so the map will appear to jump. Until that node is made optional, kill
+  it after bringup (`ros2 node list | grep map_to_odom`) or run the sim and SLAM
+  from separate launches with it removed.
+* **Odometry is EKF-fused leg odometry, not ground truth.** `odom→base_link`
+  runs through the two `robot_localization` EKFs over CHAMP's `/odom/raw` and
+  the IMU, so it drifts the way the real robot's does. Gazebo's
+  `gz-sim-odometry-publisher-system` still emits `/odom/ground_truth`, which is
+  useful as a reference track when evaluating map quality.
 * **No self-filter in the SLAM launches.** `unitree_indoor_nav2` inserts a
   `pcl_ros` CropBox around `base_link` to reject returns from the dog's own
   legs; the SLAM launches rely on `range_min: 0.5` alone.
