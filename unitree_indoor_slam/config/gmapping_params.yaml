@@ -3,7 +3,7 @@ slam_gmapping:
   ros__parameters:
 
     # Frames
-    base_frame: base_link
+    base_frame: base_footprint
     map_frame: map
     odom_frame: odom
 
