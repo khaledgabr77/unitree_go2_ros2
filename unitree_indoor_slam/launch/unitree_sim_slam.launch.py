@@ -46,8 +46,8 @@ def generate_launch_description():
         "cloud_topic", default_value="/velodyne_points/points",
         description="Input 3D PointCloud2 topic consumed by the SLAM backend")
     declare_target_frame = DeclareLaunchArgument(
-        "target_frame", default_value="velodyne",
-        description="LiDAR sensor frame (2D backends only)")
+        "target_frame", default_value="base_footprint",
+        description="Frame the LaserScan is expressed in (2D backends only)")
     declare_rviz = DeclareLaunchArgument(
         "rviz", default_value="true",
         description="Open RViz with the indoor SLAM config")

@@ -14,8 +14,6 @@ This package **does not** start Gazebo, the robot or the controllers — it only
 consumes topics/TF published by `unitree_go2_sim`. Start the simulation first,
 then start one SLAM back-end.
 
----
-
 ## Table of contents
 
 1. [Package layout](#1-package-layout)
@@ -30,8 +28,6 @@ then start one SLAM back-end.
 10. [Parameter reference](#10-parameter-reference)
 11. [Troubleshooting](#11-troubleshooting)
 12. [Known limitations](#12-known-limitations)
-
----
 
 ## 1. Package layout
 
@@ -56,8 +52,6 @@ RTAB-Map parameters are declared inline in `unitree_rtabmap.launch.py` (no YAML
 file), because most of them are RTAB-Map "Key/Value" strings rather than typed
 ROS parameters.
 
----
-
 ## 2. How it works
 
 ### 2.1 Data flow
@@ -77,10 +71,10 @@ ros_gz_bridge ──▶ /velodyne_points/points   (sensor_msgs/PointCloud2, 10 H
         │ 2D back-ends                                    │ 3D back-end
         ▼                                                 ▼
 pointcloud_to_laserscan_node                          rtabmap (scan_cloud)
- (slice −0.2…1.5 m, 360°, 0.5°)                       + /odom as external odometry
+ (floor slice 0.15…1.85 m, 360°, 0.5°)                + /odom as external odometry
         │                                                 │
         ▼                                                 │
-     /scan  (sensor_msgs/LaserScan, frame_id = velodyne)   │
+     /scan  (sensor_msgs/LaserScan, base_footprint)       │
         │                                                 │
         ▼                                                 ▼
 slam_toolbox / gmapper ─────────────▶ /map  (nav_msgs/OccupancyGrid) + TF map→odom
@@ -129,8 +123,6 @@ Important consequences:
 | `/tf`, `/tf_static` | `tf2_msgs/TFMessage` | in/out | RSP, Gazebo bridge, SLAM node |
 | `/cmd_vel` | `geometry_msgs/Twist` | out (you) | teleop → `champ_base` |
 
----
-
 ## 3. Dependencies and build
 
 ### 3.1 System packages
@@ -173,8 +165,6 @@ source install/setup.bash
 `--symlink-install` is convenient here: edits to the YAML files under
 `config/` and to the maps take effect without rebuilding.
 
----
-
 ## 4. Step 1 — start the simulation
 
 The simulation and a SLAM back-end can be started together:
@@ -211,8 +201,6 @@ you want to watch the controllers come up, or to restart SLAM without restarting
 Gazebo. Wait until the controllers are loaded and the robot is standing before
 starting SLAM. Typical console evidence: `joint_states_controller` and
 `joint_group_effort_controller` spawners exiting with success.
-
----
 
 ## 5. Step 2 — pre-flight checks (before you move the robot)
 
@@ -286,7 +274,7 @@ ros2 launch unitree_indoor_slam unitree_slam_toolbox.launch.py
 |---|---|---|
 | `use_sim_time` | `true` | must match the simulation |
 | `cloud_topic` | `/velodyne_points/points` | 3D cloud to flatten into `/scan` |
-| `target_frame` | `velodyne` | frame the `LaserScan` is expressed in |
+| `target_frame` | `base_footprint` | frame the `LaserScan` is expressed in; level and ground-anchored |
 | `rviz` | `false` | see [§12](#12-known-limitations) — the RViz config is not shipped yet |
 
 What it starts:
@@ -365,8 +353,9 @@ what `champ_base` consumes (the `unitree_go2_sim` launch file remaps
 Mapping technique that gives clean grids in the cave world:
 
 1. **Reduce speed first.** Press `z` a few times until linear speed is
-   ~0.2–0.3 m/s. The gait makes the body pitch and roll, and the `LaserScan` is
-   taken in the (tilted) `velodyne` frame — fast walking smears walls.
+   ~0.2–0.3 m/s. The gait still makes the body pitch and roll; since the
+   `LaserScan` is now taken in the level `base_footprint` frame this no longer
+   tilts the slice, but fast walking still stresses the scan matcher.
 2. **Drive in straight segments, stop, then turn.** Turning while translating is
    the worst case for the scan matcher.
 3. **Pause 1–2 s after each turn** so the scan buffer refills at the new
@@ -490,8 +479,8 @@ The Nav2 bringup in `unitree_indoor_nav2` defaults to
 
 | Parameter | Value | Why |
 |---|---|---|
-| `target_frame` | `velodyne` | scan is emitted in the LiDAR frame |
-| `min_height` / `max_height` | `-0.2` / `1.5` m | vertical slice taken around the sensor |
+| `target_frame` | `base_footprint` | level, ground-anchored frame, so the slice stays horizontal |
+| `min_height` / `max_height` | `0.15` / `1.85` m | slice measured up from the floor; `min_height` must stay above 0 or the floor maps as obstacles |
 | `angle_min` / `angle_max` | `±π` | full 360° |
 | `angle_increment` | `0.0087` rad (~0.5°) | ~720 beams per scan |
 | `scan_time` | `0.1` s | matches the 10 Hz sensor |
@@ -556,9 +545,11 @@ The Nav2 bringup in `unitree_indoor_nav2` defaults to
 * **No self-filter in the SLAM launches.** `unitree_indoor_nav2` inserts a
   `pcl_ros` CropBox around `base_link` to reject returns from the dog's own
   legs; the SLAM launches rely on `range_min: 0.5` alone.
-* **The scan is taken in the tilted `velodyne` frame.** The body pitches and
-  rolls with the gait, so the 2D slice is not perfectly horizontal. Driving
-  slowly is the mitigation.
+* **The scan slice is only as level as `base_to_footprint_ekf`.** Taking the
+  `LaserScan` in `base_footprint` rather than the tilting `velodyne` frame
+  removes the gait-induced tilt (measured body pitch reaches ~10°, which
+  displaced a 20 m ray by ~3.7 m), but `base_footprint` is only where the EKF
+  believes the ground is — if that estimate degrades, the slice tilts with it.
 * **RTAB-Map output is not committed.** Only slam_toolbox and gmapping maps are
   in `maps/`; RTAB-Map results live in `~/.ros/rtabmap.db` until exported with
   `map_saver_cli`.

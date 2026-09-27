@@ -26,8 +26,10 @@ def generate_launch_description():
         "cloud_topic", default_value="/velodyne_points/points",
         description="Input 3D PointCloud2 topic to convert into a 2D LaserScan")
     declare_target_frame = DeclareLaunchArgument(
-        "target_frame", default_value="velodyne",
-        description="LiDAR sensor frame used as the LaserScan frame")
+        "target_frame", default_value="base_footprint",
+        description="Frame the LaserScan is expressed in; base_footprint is "
+                    "level and ground-anchored, so the 2D slice stays "
+                    "horizontal while the body rolls and pitches")
     declare_rviz = DeclareLaunchArgument(
         "rviz", default_value="false",
         description="Open RViz with the indoor SLAM config")
@@ -40,9 +42,9 @@ def generate_launch_description():
         parameters=[{
             "use_sim_time": use_sim_time,
             "target_frame": target_frame,
-            "transform_tolerance": 0.01,
-            "min_height": -0.2,
-            "max_height": 1.5,
+            "transform_tolerance": 0.1,
+            "min_height": 0.15,
+            "max_height": 1.85,
             "angle_min": -3.141592,
             "angle_max":  3.141592,
             "angle_increment": 0.0087,   # ~0.5 deg
