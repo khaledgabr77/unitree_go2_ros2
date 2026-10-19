@@ -14,7 +14,7 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 
 
 def generate_launch_description():
@@ -197,7 +197,14 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
         launch_arguments={
-            'gz_args': [LaunchConfiguration('world'), ' -r']  # Add -r flag to start unpaused
+            'gz_args': [
+                LaunchConfiguration('world'),
+                ' -r',  # start unpaused
+                PythonExpression([
+                    "'' if '", LaunchConfiguration('gui'),
+                    "'.lower() in ('true', '1') else ' -s'",
+                ]),  # run headless if gui==false
+            ]
         }.items(),
     )
     
