@@ -37,7 +37,7 @@ def sim_cmd(backend: Literal["slam_toolbox", "gmapping", "rtabmap"]):
         "unitree_sim_slam.launch.py",
         f"slam:={backend}",
         f"world:={os.path.join(get_package_share_directory('unitree_go2_description'), 'worlds', 'default.sdf')}",
-        # The launch file defaults to the cave entrance (x=-30), out of scan range of every default.sdf obstacle.
+        # The launch file defaults to the cave entrance (x=-30), out of scan range of every default.sdf obstacle
         "world_init_x:=0.0",
         "world_init_z:=0.375",
         "rviz:=false",
@@ -45,7 +45,8 @@ def sim_cmd(backend: Literal["slam_toolbox", "gmapping", "rtabmap"]):
         "disable_camera:=true",
         "disable_d455:=true",
         "disable_lidar_l1:=true",
-        "slam_start_delay:=20.0",
+        # Starting SLAM right away risks mapping the robot dropping at spawn
+        "slam_start_delay:=8.0",
     ]
 
 
